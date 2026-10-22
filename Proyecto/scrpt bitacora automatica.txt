@@ -1,0 +1,118 @@
+## script genera copia new hoja excel
+	Falta la lectura de campos, hoy se coloca la fecha, debe ser lectura automarica
+	formato de fecha que pide 'fechaIso': fechaIso
+
+
+	function main(workbook: ExcelScript.Workbook, fechaIso: string) {
+
+    // ---- CONFIGURACIÓN ----
+
+    const HOJA_PLANTILLA = "PLANTILLA";
+
+    const HOJA_FESTIVOS = "Festivos";   // columna A = fecha real
+
+    const CELDA_ENCABEZADO = "B2";
+
+    const FILA_FECHAS = 3;
+
+    const COL_INICIO = 5;               // E = lunes
+
+    const FILA_PROC_FIN = 23;           // RPA 17
+
+    const CELDA_LEYENDA_GRIS = "L9";    // cuadro "Día inhábil" (confirmar)
+
+    const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+
+        "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+    // -----------------------
+
+
+
+    const DIA = 86400000;
+
+    const fechaTexto = fechaIso || "2026-10-19"; // si no llega nada, usa esta fecha de prueba
+
+    const [y, m, d] = fechaTexto.split("-").map(x => Number(x));
+
+    const base = new Date(Date.UTC(y, m - 1, d));
+
+    const dow = base.getUTCDay();
+
+    const delta = dow === 0 ? 1 : dow === 6 ? 2 : 1 - dow;
+
+    const lunes = new Date(base.getTime() + delta * DIA);
+
+    const viernes = new Date(lunes.getTime() + 4 * DIA);
+
+
+
+    const nombre = lunes.toISOString().slice(0, 10);
+
+    if (workbook.getWorksheet(nombre)) return; // idempotente
+
+
+
+    const serial = (f: Date) =>
+
+        Math.round((f.getTime() - Date.UTC(1899, 11, 30)) / DIA);
+
+
+
+    const festivos = new Set<number>();
+
+    workbook.getWorksheet(HOJA_FESTIVOS).getUsedRange().getValues()
+
+        .forEach(r => { if (typeof r[0] === "number") festivos.add(Math.floor(r[0])); });
+
+
+
+    const plantilla = workbook.getWorksheet(HOJA_PLANTILLA);
+
+    const leido = plantilla.getRange(CELDA_LEYENDA_GRIS).getFormat().getFill().getColor();
+
+    const gris = (leido && leido !== "#FFFFFF") ? leido : "#D9D9D9";
+
+
+
+    const hoja = plantilla.copy(ExcelScript.WorksheetPositionType.beginning);
+
+    hoja.setName(nombre);
+
+    hoja.setVisibility(ExcelScript.SheetVisibility.visible);
+
+
+
+    hoja.getRange(CELDA_ENCABEZADO).setValue(
+
+        `Reporte de Cierre ${MESES[lunes.getUTCMonth()]} ${lunes.getUTCDate()} - ` +
+
+        `${viernes.getUTCDate()} ${MESES[viernes.getUTCMonth()]}`);
+
+
+
+    for (let i = 0; i < 5; i++) {
+
+        const f = new Date(lunes.getTime() + i * DIA);
+
+        const col = COL_INICIO - 1 + i;
+
+        const celda = hoja.getRangeByIndexes(FILA_FECHAS - 1, col, 1, 1);
+
+        celda.setValue(serial(f));
+
+        celda.setNumberFormat("d");
+
+        if (festivos.has(serial(f))) {
+
+            hoja.getRangeByIndexes(FILA_FECHAS - 1, col,
+
+                FILA_PROC_FIN - FILA_FECHAS + 1, 1)
+
+                .getFormat().getFill().setColor(gris);
+
+        }
+
+    }
+
+}

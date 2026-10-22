@@ -1,0 +1,27 @@
+##	< Proyecto RPA Sura MX >
+
+Contexto de proyecto inicial del proyecto. Se plantea la problemática, pasos de la actividad ejecutada actualmente y la propuesta a realizar
+
+#	¿Qué se quiere lograr?
+
+Automatizar una actividad repetitiva y predecible. 
+Inicio: llegada de notificación vía correo - Fin: Generación ticket con errores consolidados vía correo
+
+4 etapas de automatización:
+
+	1. Generar bitácora
+	2. Lectura de correos y extracción de datos
+	3. Actualización de bitácora y consolidado de errores según reglas
+	4. Envío de correo para generación de ticket
+
+#	Actividad actual
+
+Descripción breve de cómo se realiza la actividad actualmente
+
+Inicia actividad 1:31 am (llegada del primer RPA)
+finaliza tarea: 7:46 am  (ultimo RPA)
+
+Llega un total de 17 correos con información de un proceso 'RPA' + 3 correos LOG en caso de error en 1 RAP en especifico, el asunto de cada correo se tiene identificado | El cuerpo del correo indica si finaliza exitosamente o si hubo un error al respecto | Se registra en bitácora | La bitácora contiene el estado final diario de cada RPA en una semana | Sí la notificación de un RPA no llega se valida como error | al finalizar se debe enviar un correo con los RPA con error. 
+
+
+

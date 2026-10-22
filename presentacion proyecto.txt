@@ -1,0 +1,69 @@
+##	Automatización del monitoreo, validación y notificación de resultados RPA
+
+##	Problema
+
+Actualmente, el equipo de operaciones realiza manualmente la revisión diaria de aproximadamente 20 correos asociados a la ejecución de procesos RPA, recibidos progresivamente entre la 01:30 a. m. y las 08:00 a. m. Esta actividad exige verificar el estado de cada proceso, identificar ejecuciones exitosas, fallidas o sin reporte, registrar los resultados y consolidar una notificación final de los RPA con fallas. La dependencia de la intervención humana genera trabajo operativo repetitivo (TOIL), riesgo de omisión, retrasos en la detección de errores y consumo de tiempo que podría destinarse a actividades de mayor valor.
+
+##	Objetivo
+
+Automatizar al menos el 90 % del tiempo dedicado a la revisión, clasificación y consolidación manual de resultados RPA, garantizando la validación del 100 % de los procesos esperados y la generación automática de alertas e informes de fallas, durante los primeros 30 días posteriores a la puesta en producción, con el fin de reducir el TOIL y minimizar el riesgo de omisiones operativas.
+
+##	TOIL
+
+Revisión manual diaria de aproximadamente 20 notificaciones RPA recibidas entre la 01:30 a. m. y las 08:00 a. m., incluyendo validación de resultados, identificación de fallas, registro en bitácora y elaboración y envío del informe consolidado.
+
+##	Etapas de desarrollo
+
+Etapa 1 - Generación de bitácora semanal 
+Objetivo: 
+	Detectar la última semana existente en la bitácora. 
+	Crear automáticamente la semana siguiente. 
+	Calcular fechas correctamente. 
+	Mantener estructura, formatos y colores. 
+	Considerar festivos de México. 
+	Marcar festivos en gris. 
+
+Etapa 2 - Lectura y clasificación de correos 
+
+Objetivo: 
+	Leer Outlook 365. 
+	Identificar cada RPA. 
+	Detectar:  
+		Exitoso 
+		Error 
+	Identificar correos LOG asociados. 
+	Incluir escenario de prueba de día festivo. 
+
+Etapa 3 - Actualización de bitácora 
+
+Objetivo: 
+	Registrar estado de ejecución. 
+	Aplicar color correspondiente. 
+	Registrar código de error. 
+	Aplicar reglas de festivos. 
+	Simular ejecución en día festivo. 
+
+Etapa 4 - Comunicación consolidada 
+
+Objetivo: 
+	Consolidar incidentes. 
+	Construir correo único. 
+	Preparar información para generación de ticket. 
+	Envío correo con respuesta de creación de ticket 
+	
+##	Herramientas de uso
+
+	Excel
+	Outlook
+	Python
+	Power automate
+	Copilot
+	Claude personal
+	
+	
+##Uso de IA
+
+Asistente: 
+	Planeación y documentación del proyecto
+	Desarrollo de Scripts de automatización
+	
