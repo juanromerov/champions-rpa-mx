@@ -1,10 +1,11 @@
-# Flujo general – Automatización bitácora RPA (Sura MX)
+# Flujo general - automatización
 
+> v0.4 · Automatización en 4 etapas. (En actualización)
 
+>Proceso estandarizado por horas. 
+> 8:00 am Consolidado inmediato si los 17 RPA sí ya tienen estado definido
 
-# Flujo general – Automatización bitácora RPA (Sura MX)
-
-> v0.3 · Consolidado inmediato si los 17 RPA ya tienen estado; si no, corte 8:25 a. m. Un 0 se sobrescribe si llega el correo real.
+> 8:30 am. Sí no se ha enviado consolidado y hay RPA sin estado, se coloca en 0 'No llegó" y se añade al consolidado de errores
 
 ```mermaid
 flowchart TD
@@ -16,12 +17,12 @@ flowchart TD
     classDef nota fill:#fff,stroke:#9ca3af,color:#444,stroke-dasharray:4 3
 
     T1(["⏰ Disparador semanal<br/>Lunes 0:00"]):::disparador
-    E1["<b>ETAPA 1 · Generar bitácora</b><br/>Detectar última semana, crear la siguiente (L–V),<br/>calcular fechas y marcar festivos en gris"]:::etapa
+    E1["<b>ETAPA 1 · Generar bitácora</b><br/>Crear bitacora semanal según fecha en curso (L–V),<br/>calcular fechas y marcar festivos en gris"]:::etapa
     B1[("📗 Excel en OneDrive<br/>Hoja nueva = fecha ISO del lunes")]:::salida
     T1 --> E1 --> B1
 
     F{"Día hábil:<br/>¿hoy es festivo<br/>en México?"}:::decision
-    FG["Columna en gris<br/>No se evalúa nada"]:::gris
+    FG["Columna en gris<br/>No se evalúa nada. No hay disparador para procesos Etapa 2, 3 y 4"]:::gris
     B1 -. "semana disponible" .-> F
     F -- Sí --> FG
 
