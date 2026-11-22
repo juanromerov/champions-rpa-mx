@@ -1,6 +1,6 @@
 # Flujo Etapa 2 · B · Verificación de llegada del LOG
 
-> v0.2 · Corre cuando un RPA con LOG asociado termina en error. No tiene arranque propio: lo llama el Flujo A. 🟠 entrada · 🟢 salida
+> v1.0 · Corre cuando un RPA con LOG asociado termina en error. No tiene arranque propio: lo llama el Flujo A. 🟠 entrada · 🟢 salida
 
 ```mermaid
 flowchart TD
@@ -12,13 +12,13 @@ flowchart TD
     classDef nota fill:#fff,stroke:#9ca3af,color:#444,stroke-dasharray:4 3
 
     IN(("ENTRADA ← Flujo A<br/>rpa · cod_error")):::entrada
-    TIENE{"¿El RPA tiene un LOG en<br/>el catálogo? (RPA origen)"}:::decision
+    TIENE{"¿El RPA tiene un LOG en el catálogo?<br/>(fila de tipo LOG con el mismo rpa)"}:::decision
     FIN(["Fin: no se espera LOG"]):::gris
     YA{"¿Su LOG ya tiene fila hoy?<br/>(pudo llegar fuera de orden)"}:::decision
-    ESP["Crear la fila del LOG en el Registro:<br/>estado log_esperado · paso en_espera_log<br/>(sin sondeo: el flujo no se queda esperando)"]:::paso
-    NOTA["Si el LOG llega después, lo atiende el Flujo A<br/>y la fila pasa a log_recibido. Si a las 8:30 sigue sin<br/>llegar, el corte (Flujo C) la marca sin_llegar con código 0"]:::nota
-    OUT1(("SALIDA → Etapa 4<br/>LOG recibido · RPA origen")):::salida
-    OUT2(("SALIDA → Etapa 4 y Flujo C<br/>LOG esperado · RPA origen")):::salida
+    ESP["Crear la fila del LOG en el Registro con su id_fila<br/>(un guid generado una sola vez):<br/>estado log_esperado · paso en_espera_log<br/>(sin sondeo: el flujo no se queda esperando)"]:::paso
+    NOTA["Si el LOG llega después, lo atiende el Flujo A<br/>y la fila pasa a log_recibido (se actualiza por id_fila).<br/>Si a las 8:30 sigue sin llegar, el corte (Flujo C)<br/>la marca sin_llegar con código 0"]:::nota
+    OUT1(("SALIDA → Etapa 4<br/>LOG recibido · rpa")):::salida
+    OUT2(("SALIDA → Etapa 4 y Flujo C<br/>LOG esperado · rpa")):::salida
 
     IN --> TIENE
     TIENE -- No --> FIN
@@ -33,8 +33,8 @@ flowchart TD
 | Conexión | Variable | Con quién |
 |---|---|---|
 | 🟠 Entrada | rpa, cod_error | Flujo A |
-| 🟢 Salida | LOG recibido · RPA origen | Etapa 4 |
-| 🟢 Salida | LOG esperado · RPA origen | Etapa 4 y Flujo C |
+| 🟢 Salida | LOG recibido · rpa | Etapa 4 |
+| 🟢 Salida | LOG esperado · rpa | Etapa 4 y Flujo C |
 
 ## Reglas básicas de arranque
 
