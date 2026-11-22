@@ -1,93 +1,83 @@
-# Flujo general - automatización
+# Flujo general · Automatización de la bitácora de ejecuciones RPA
 
-> v0.4 · Automatización en 4 etapas. (En actualización)
-
->Proceso estandarizado por horas. 
-> 8:00 am Consolidado inmediato si los 17 RPA sí ya tienen estado definido
-
-> 8:30 am. Sí no se ha enviado consolidado y hay RPA sin estado, se coloca en 0 'No llegó" y se añade al consolidado de errores
+> v1.0 · Vista de todo el proyecto: las cuatro etapas y cómo se conectan. El detalle de cada una está en su propio flujo (📄).
+> 🟠 entrada · 🟢 salida (con la variable que viaja)
 
 ```mermaid
 flowchart TD
-    classDef disparador fill:#dbeafe,stroke:#1d4ed8,color:#111
+    classDef entrada fill:#fdba74,stroke:#c2410c,color:#111
+    classDef salida fill:#86efac,stroke:#15803d,color:#111
     classDef etapa fill:#e0f2fe,stroke:#0369a1,color:#111
     classDef decision fill:#fef9c3,stroke:#a16207,color:#111
-    classDef salida fill:#dcfce7,stroke:#15803d,color:#111
     classDef gris fill:#e5e7eb,stroke:#6b7280,color:#111
-    classDef nota fill:#fff,stroke:#9ca3af,color:#444,stroke-dasharray:4 3
+    classDef datos fill:#ffffff,stroke:#9ca3af,color:#444,stroke-dasharray:4 3
+    classDef alerta fill:#fecaca,stroke:#b91c1c,color:#111
 
-    T1(["⏰ Disparador semanal<br/>Lunes 0:00"]):::disparador
-    E1["<b>ETAPA 1 · Generar bitácora</b><br/>Crear bitacora semanal según fecha en curso (L–V),<br/>calcular fechas y marcar festivos en gris"]:::etapa
-    B1[("📗 Excel en OneDrive<br/>Hoja nueva = fecha ISO del lunes")]:::salida
-    T1 --> E1 --> B1
+    IN1(("ENTRADA<br/>Lunes 0:00")):::entrada
+    E1["<b>ETAPA 1 · Generar bitácora</b><br/>Hoja de la semana desde PLANTILLA,<br/>fechas de lunes a viernes y festivos en gris<br/>📄 flujo1-bitacora.md"]:::etapa
+    OUT1(("SALIDA<br/>Hoja de la semana<br/>nombre = fecha ISO del lunes")):::salida
 
-    F{"Día hábil:<br/>¿hoy es festivo<br/>en México?"}:::decision
-    FG["Columna en gris<br/>No se evalúa nada. No hay disparador para procesos Etapa 2, 3 y 4"]:::gris
-    B1 -. "semana disponible" .-> F
-    F -- Sí --> FG
+    IN2A(("ENTRADA<br/>Llega un correo<br/>de RPA o LOG")):::entrada
+    IN2C(("ENTRADA<br/>Corte L-V 8:30")):::entrada
+    G{"Guardas de entrada<br/>¿Hoy es festivo?<br/>¿El día ya está cerrado en Control?"}:::decision
+    FIN([" Fin: no se hace nada más "]):::gris
+    E2["<b>ETAPA 2 · Leer y clasificar correos</b><br/>A · correo: clasifica y crea la fila en el Registro<br/>B · LOG: espera el LOG si el RPA falló<br/>C · corte: código 0 a lo que no llegó<br/>📄 flujo2-etapa2-general.md<br/>flujo2a-correo · flujo2b-log · flujo2c-corte-0830"]:::etapa
 
-    subgraph PA ["Camino A · por cada correo que llega (desde ~1:30 a. m.)"]
-        direction TB
-        TE(["📩 Llega correo RPA / LOG"]):::disparador
-        E2["<b>ETAPA 2 · Leer y clasificar</b><br/>Identificar RPA por asunto,<br/>detectar éxito / error, asociar LOG"]:::etapa
-        E3["<b>ETAPA 3 · Actualizar bitácora</b><br/>Verde = éxito · Rojo + código (catálogo 0–15; otro = 17)<br/>Si la celda tenía 0, se sobrescribe y queda en el log"]:::etapa
-        COMP{"¿Los 17 RPA esperados<br/>ya tienen estado?"}:::decision
-        ESP(["Fin de esta ejecución<br/>(se espera el siguiente correo o el corte)"]):::gris
-        ENVA{"¿Consolidado del día<br/>ya enviado?"}:::decision
-        TE --> E2 --> E3 --> COMP
-        COMP -- No --> ESP
-        COMP -- "Sí · consolidar de inmediato" --> ENVA
+    E3["<b>ETAPA 3 · Actualizar bitácora</b><br/>Escribe valor y color en la hoja de la semana<br/>y marca las filas como en_bitacora<br/>📄 flujo3-actualizar-bitacora.md"]:::etapa
+    OUT3(("SALIDA<br/>Celdas escritas en la hoja de la semana<br/>Filas del Registro en en_bitacora")):::salida
+
+    IN4A(("ENTRADA<br/>Consolidación inmediata<br/>llamada desde el flujo A")):::entrada
+    IN4B(("ENTRADA<br/>L-V 8:31")):::entrada
+    E4["<b>ETAPA 4 · Consolidado y ticket</b><br/>Con todos los esperados con estado y sin filas pendientes:<br/>correo solo si hay errores y cierra el día en Control<br/>📄 flujo4-consolidado.md"]:::etapa
+    OUT4(("SALIDA<br/>Correo del ticket, solo si hay errores<br/>Día cerrado en Control")):::salida
+
+    subgraph DATOS["Datos compartidos y avisos"]
+        DB1[("Excel de bitácoras<br/>PLANTILLA · Festivos · Control · Registro")]:::datos
+        DB2[("Catalogo_RPA.xlsx · solo lectura<br/>tabla de RPA y patrones de error")]:::datos
+        ALERTA["⚠️ Si una etapa falla: alerta por correo y por Teams<br/>no se marcan falsos errores de RPA"]:::alerta
     end
 
-    subgraph PB ["Camino B · corte a las 8:25 a. m."]
-        direction TB
-        TC(["⏰ 8:25 a. m. L–V"]):::disparador
-        ENVB{"¿Consolidado del día<br/>ya enviado?"}:::decision
-        FALT["Marcar código 0 (No llegó = error)<br/>en cada RPA sin estado"]:::etapa
-        TC --> ENVB
-        ENVB -- No --> FALT
-    end
-
-    F -- No --> TE
-    F -- No --> TC
-    E3 -.-> B1
-
-    FIN0(["Nada que hacer:<br/>ya se consolidó"]):::gris
-    ENVA -- Sí --> FIN0
-    ENVB -- Sí --> FIN0
-
-    E4["<b>ETAPA 4 · Consolidado (único del día)</b><br/>RPA, código y descripción de los incidentes<br/>Marca 'consolidado enviado' en el log"]:::etapa
-    Q{"¿Hubo<br/>incidentes?"}:::decision
-    TK["📧 Envío al buzón de tickets<br/>Ti-Infra MX"]:::salida
-    RT["Registrar respuesta de<br/>creación del ticket"]:::salida
-    OK["Registrar día sin incidentes<br/>(sin ticket)"]:::salida
-
-    ENVA -- No --> E4
-    FALT --> E4
-    E4 --> Q
-    Q -- Sí --> TK --> RT
-    Q -- No --> OK
-
-    TARD["📩 Correo después del consolidado<br/>Se actualiza bitácora + log<br/>No se envía un segundo consolidado*"]:::nota
-    TARD -.-> E2
+    IN1 --> E1 --> OUT1
+    IN2A --> G
+    IN2C --> G
+    G -- Sí --> FIN
+    G -- No --> E2
+    E2 -- "filas clasificado<br/>tras cada correo (A) y pasada final del corte (C)" --> E3
+    E3 --> OUT3
+    OUT1 -.-> E3
+    E2 -. "Registro del día<br/>con todos los estados" .-> E4
+    IN4A --> E4
+    IN4B --> E4
+    OUT1 -.-> E4
+    E4 --> OUT4
 ```
 
-## Lectura rápida
+## Un día típico (hora Colombia)
 
-| Etapa | Disparador | Entrada | Salida |
-|---|---|---|---|
-| 1 · Generar bitácora | Lunes 0:00 | Última hoja de la bitácora + hojas `PLANTILLA` y `Festivos` | Hoja nueva de la semana (festivos en gris) |
-| 2 · Leer y clasificar | Cada correo RPA/LOG que llega (L–V, desde ~1:30 a. m.; no se evalúa en festivo) | Correos de Outlook 365 | Estado por RPA (éxito / error + código) |
-| 3 · Actualizar bitácora | Tras clasificar cada correo; y a las 8:25 a. m. para los RPA sin estado | Estado por RPA + catálogo de incidentes | Celdas en verde, o rojo + código; rojo + código 0 ("No llegó") a las 8:25 |
-| 4 · Consolidado | Lo que ocurra primero: los 17 RPA ya tienen estado (consolida de inmediato) o corte de las 8:25 a. m. (hora Colombia) | Incidentes del día + tabla de control | Un único correo de ticket + respuesta registrada; marca "consolidado enviado" en la tabla de control |
+| Hora | Qué pasa |
+|---|---|
+| Lunes 0:00 | La Etapa 1 crea la hoja de la semana |
+| Desde ~1:30 | Llegan los correos de los RPA. Por cada uno, la Etapa 2 lo clasifica y la Etapa 3 lo refleja en la bitácora |
+| Hacia las ~7:50 | Si todos los esperados ya tienen estado, la Etapa 4 consolida de inmediato |
+| 8:30 | Corte: la Etapa 2 marca con código 0 lo que no llegó y la Etapa 3 hace su pasada final |
+| 8:31 | La Etapa 4 consolida y cierra el día. Si falta algo, espera y reintenta unos minutos antes de alertar |
 
-## Puntos abiertos que afectan este flujo
+## Cómo se conectan las etapas
 
-1. **Correos LOG con consolidación inmediata (P-01):** ¿se consolida sin esperar el LOG o se espera si hay error en los 3 RPA que lo envían?
-2. **Correo posterior a las 8:25 (P-02):** con la revisión única, la celda queda en rojo con 0; falta definir si el correo tardío se ignora, va solo al log o se anota aparte.
-3. **Consolidación inmediata vs. revisión única (P-06):** confirmar si se mantiene la comprobación de "17 con estado" tras cada correo.
-4. **Día sin incidentes (P-03) y RPA esperados por día (P-04):** ¿Ti-Infra espera correo diario sin errores? ¿Son los mismos 17 todos los días?
-5. **Office Scripts en el tenant:** el script actual de la Etapa 1 lo requiere; si no está habilitado, se resuelve con acciones nativas de Excel.
-6. **Cuenta de ejecución:** hoy se haría con la cuenta personal; falta saber cuál es válida según parámetros de SETI.
-7. **Falla de la propia automatización (EX-06):** el diagrama aún no incluye la ruta de aviso a un responsable; se modelará en el detalle por etapa.
-8. **Pendientes de diseño:** crear la tabla de control en el Excel y publicar el flujo general v0.4, sin la sobrescritura del 0.
+| De → A | Qué viaja |
+|---|---|
+| 🟢 Etapa 1 → Etapas 3 y 4 | Hoja de la semana (nombre = fecha ISO del lunes) |
+| 🟢 Etapa 2 → Etapa 3 | Filas en paso `clasificado`: `id_fila`, `rpa`, `grupo`, `estado`, `cod_error`, `error`, `recibido` |
+| 🟢 Etapa 2 → Etapa 4 | Registro del día con todos los estados (la Etapa 4 lee el Registro, no la bitácora) |
+| 🟢 Etapa 3 → bitácora y Registro | Valor y color de cada celda; las filas pasan a `en_bitacora` |
+| 🟢 Etapa 4 → Control y correo | Estado del día (`enviando`, `enviado` o `sin_errores`) y, si hubo errores, el correo del ticket |
+| 🟠 Control → Etapas 2, 3 y 4 | Las guardas leen si el día ya está cerrado |
+
+## Reglas que valen para todo el proyecto
+
+1. **Herramienta única:** Power Automate en la nube, con Outlook y Excel. Todos los disparadores van en hora de Colombia.
+2. **Dos disparadores independientes:** el semanal (Etapa 1) y los diarios de lunes a viernes (Etapas 2 a 4).
+3. **Dos reglas básicas en las puertas de entrada:** si hoy es festivo, no se hace nada; si el consolidado ya se envió, no se sigue validando. La Etapa 1 corre todos los lunes sin guardas. La Etapa 3 solo lleva la de festivo. La Etapa 4 lleva la de festivo y revisa `Control` como candado contra el doble envío.
+4. **El Registro es el punto de control entre etapas:** cada etapa sabe qué le toca por la columna `paso`, y se puede reintentar sin releer los correos.
+5. **El consolidado es el punto final del día:** la bitácora no se modifica después de enviarlo.
+6. **Excel configurable:** la ubicación de los archivos y los destinatarios viven en un solo punto de configuración que leen las cuatro etapas.
